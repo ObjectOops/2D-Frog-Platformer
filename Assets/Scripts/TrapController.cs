@@ -31,7 +31,7 @@ public class TrapController : MonoBehaviour
             // Debug.Log("Reached start.");
         }
         transform.position = Vector2.MoveTowards(transform.position, 
-            direction == 1 ? endPoint.transform.position : startPoint.transform.position, 
+            direction == 1 ? endPointPos : startPointPos, 
             speed * Time.deltaTime);
     }
 }
