@@ -21,7 +21,7 @@ public class PlayerController : MonoBehaviour
     private new CapsuleCollider2D collider;
 
     // Inputs
-    private float inputHorizontal, previousInputHorizontal, inputHorizontalRaw;
+    private float inputHorizontal, inputHorizontalRaw;
     private bool jumpNow, sprintNow, dashNow;
 
     // Ground Detection
@@ -62,7 +62,6 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        previousInputHorizontal = inputHorizontal;
         inputHorizontal = Input.GetAxis("Horizontal");
         inputHorizontalRaw = Input.GetAxisRaw("Horizontal");
         jumpNow = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
@@ -202,7 +201,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void Respawn()
+    public void Respawn()
     {
         transform.position = new Vector3(respawnX, respawnY, transform.position.z);
     }
