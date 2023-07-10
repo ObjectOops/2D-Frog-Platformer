@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 /*
  * 
  * I understand that this code is not properly modularized.
- * Refactoring is a later objective at the moment.
+ * Refactoring is a later objective at the moment. Variable and tag names may no longer reflect behavior.
  * Also some unecessary code was kept during migration from the old to new input system.
  * 
  * Known Bugs:
@@ -28,6 +28,14 @@ public class PlayerController : MonoBehaviour
     private float dashForce, dashForceVertical, dashCoolDown, dashVelocityThreshold, dashSlowFactor;
     [SerializeField]
     private float stickCoolDown;
+
+    // UI and Health
+    [SerializeField]
+    private GameObject ui;
+    [SerializeField]
+    private int health;
+    [SerializeField]
+    private float invulnerableTime;
 
     // Player Components
     private Rigidbody2D rigidBody;
@@ -55,7 +63,6 @@ public class PlayerController : MonoBehaviour
 
     // Mutable Variables
     private bool onGround, onWall = false;
-    private float respawnX, respawnY;
     private bool doubleJumpNow = false;
     private bool doubleJumpAnimationComplete = false;
     private float deltaDash = 0;
@@ -63,6 +70,7 @@ public class PlayerController : MonoBehaviour
     private float playerWidth;
     private float deltaStick = 0;
     private float wallDirection = 0;
+    private float deltaDamage;
 
     void Start()
     {
@@ -70,9 +78,8 @@ public class PlayerController : MonoBehaviour
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         collider = GetComponent<CapsuleCollider2D>();
-        respawnX = transform.position.x;
-        respawnY = transform.position.y;
         playerWidth = collider.size.x;
+        deltaDamage = invulnerableTime;
     }
 
     void Update()
@@ -96,9 +103,11 @@ public class PlayerController : MonoBehaviour
         bool isDoubleJumping = doubleJumpNow && !doubleJumpAnimationComplete;
         bool isSprinting = isRunning && sprintNow;
         bool isDashing = Mathf.Abs(rigidBody.velocity.x) > dashVelocityThreshold;
+        bool isInvulnerable = deltaDamage < invulnerableTime;
 
         deltaDash += Time.deltaTime;
         deltaStick += Time.deltaTime;
+        deltaDamage += Time.deltaTime;
 
         // Reset double jump upon contact with ground or sticking to wall.
         doubleJumpNow = !(onGround || onWall) && doubleJumpNow;
@@ -109,7 +118,9 @@ public class PlayerController : MonoBehaviour
         animator.SetBool("doubleJumping", isDoubleJumping);
         animator.SetBool("sprinting", isSprinting);
         animator.SetBool("dashing", isDashing);
+
         animator.SetBool("perching", onWall);
+        animator.SetBool("hurting", isInvulnerable);
 
         OrientSprite();
 
@@ -190,6 +201,21 @@ public class PlayerController : MonoBehaviour
         /*        ResetEnemies();*/
     }
 
+    public void TakeDamage(int damage)
+    {
+        if (deltaDamage < invulnerableTime)
+        {
+            return;
+        }
+        deltaDamage = 0;
+        health -= damage;
+        ui.GetComponent<UIManager>().SetHealth(health);
+        if (health <= 0)
+        {
+            Respawn();
+        }
+    }
+
     /*    private void ResetEnemies()
         {
             GameObject[] startEnemies = GameObject.FindGameObjectsWithTag("Enemy");
@@ -231,6 +257,10 @@ public class PlayerController : MonoBehaviour
         {
             Respawn();
             // Debug.Log("Died.");
+        }
+        else if (other.gameObject.CompareTag("Trap"))
+        {
+            TakeDamage(1);
         }
         else if (other.gameObject.CompareTag("Sticky") && 
                  Mathf.Abs(pointX - transform.position.x) > playerWidth / 4)

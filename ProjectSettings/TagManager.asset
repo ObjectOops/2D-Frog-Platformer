@@ -10,6 +10,7 @@ TagManager:
   - Enemy
   - Clone
   - Enemy Spawner
+  - Trap
   layers:
   - Default
   - TransparentFX
