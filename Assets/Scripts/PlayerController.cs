@@ -71,7 +71,7 @@ public class PlayerController : MonoBehaviour
     private float deltaStick = 0;
     private float wallDirection = 0;
     private float deltaDamage;
-
+    private float respawnX, respawnY;
     void Start()
     {
         rigidBody = GetComponent<Rigidbody2D>();
@@ -80,6 +80,8 @@ public class PlayerController : MonoBehaviour
         collider = GetComponent<CapsuleCollider2D>();
         playerWidth = collider.size.x;
         deltaDamage = invulnerableTime;
+        respawnX = transform.position.x;
+        respawnY = transform.position.y;
     }
 
     void Update()
@@ -193,13 +195,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void Respawn()
+/*    public void Respawn()
     {
         // Just reload scene for now.
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        /*        transform.position = new Vector3(respawnX, respawnY, transform.position.z);*/
-        /*        ResetEnemies();*/
-    }
+        *//*        transform.position = new Vector3(respawnX, respawnY, transform.position.z);*/
+        /*        ResetEnemies();*//*
+    }*/
 
     public void TakeDamage(int damage)
     {
@@ -212,30 +214,33 @@ public class PlayerController : MonoBehaviour
         ui.GetComponent<UIManager>().SetHealth(health);
         if (health <= 0)
         {
-            Respawn();
+            SceneManager.LoadScene("LoseScene");
         }
     }
 
-    /*    private void ResetEnemies()
-        {
-            GameObject[] startEnemies = GameObject.FindGameObjectsWithTag("Enemy");
-            GameObject[] clones = GameObject.FindGameObjectsWithTag("Clone");
-            GameObject[] spawners = GameObject.FindGameObjectsWithTag("Enemy Spawner");
-            foreach (GameObject enemy in startEnemies)
-            {
-                enemy.GetComponent<EnemyController>().ReturnToSpawnInsant();
-            }
-            foreach (GameObject clone in clones)
-            {
-                Destroy(clone);
-            }
-            foreach (GameObject spawner in spawners)
-            {
-                spawner.GetComponent<Spawner>().active = false;
+    private void ResetEnemies()
+    {
+        GameObject[] startEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+        GameObject[] clones = GameObject.FindGameObjectsWithTag("Clone");
+        GameObject[] spawners = GameObject.FindGameObjectsWithTag("Enemy Spawner");
 
-                // Debug.Log("Disabled spawner.");
-            }
-        }*/
+        // Debug.Log("Reset Enemies Things Found: " + startEnemies.Length + ' ' + clones.Length + ' ' + spawners.Length);
+
+        foreach (GameObject enemy in startEnemies)
+        {
+            enemy.GetComponent<EnemyController>().ReturnToSpawnInsant();
+        }
+        foreach (GameObject spawner in spawners)
+        {
+            spawner.GetComponent<Spawner>().active = false;
+
+            // Debug.Log("Disabled spawner.");
+        }
+        foreach (GameObject clone in clones)
+        {
+            Destroy(clone);
+        }
+    }
 
     // Called by an Animation Event at the end.
     public void CompleteDoubleJumpAnimation()
@@ -255,7 +260,9 @@ public class PlayerController : MonoBehaviour
         }
         else if (other.gameObject.CompareTag("Death"))
         {
-            Respawn();
+            transform.position = new Vector2(respawnX, respawnY);
+            TakeDamage(1);
+            ResetEnemies();
             // Debug.Log("Died.");
         }
         else if (other.gameObject.CompareTag("Trap"))
