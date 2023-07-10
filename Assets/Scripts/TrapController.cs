@@ -5,7 +5,7 @@ using UnityEngine;
 public class TrapController : MonoBehaviour
 {
     [SerializeField]
-    GameObject startPoint, endPoint;
+    private GameObject startPoint, endPoint;
     [SerializeField]
     private float speed;
 

@@ -8,6 +8,8 @@ TagManager:
   - Death
   - Sticky
   - Enemy
+  - Clone
+  - Enemy Spawner
   layers:
   - Default
   - TransparentFX

@@ -4,6 +4,21 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+/*
+ * 
+ * I understand that this code is not properly modularized.
+ * Refactoring is a later objective at the moment.
+ * Also some unecessary code was kept during migration from the old to new input system.
+ * 
+ * Known Bugs:
+ * 1. Because the player collider is a capsule, 
+ *    if the player dashes into a tilemap corner, it gives them extra velocity.
+ * 2. When dashing into a sticky wall, 
+ *    if the movement direction changes to be the opposite direction of the wall during the dash, 
+ *    the animated sprite renders the wrong way.
+ * 
+*/
+
 public class PlayerController : MonoBehaviour
 {
     // Adjustable Parameters
@@ -62,11 +77,11 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        inputHorizontal = Input.GetAxis("Horizontal");
-        inputHorizontalRaw = Input.GetAxisRaw("Horizontal");
-        jumpNow = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
-        sprintNow = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        dashNow = Input.GetKeyDown(KeyCode.Space);
+        // inputHorizontal = Input.GetAxis("Horizontal");
+        // inputHorizontalRaw = Input.GetAxisRaw("Horizontal");
+        // jumpNow = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
+        // sprintNow = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        // dashNow = Input.GetKeyDown(KeyCode.Space);
 
         // Ground detection.
         // onGround = Physics2D.Raycast(transform.position, Vector2.down, castLength, groundLayer);
@@ -81,40 +96,6 @@ public class PlayerController : MonoBehaviour
         bool isDoubleJumping = doubleJumpNow && !doubleJumpAnimationComplete;
         bool isSprinting = isRunning && sprintNow;
         bool isDashing = Mathf.Abs(rigidBody.velocity.x) > dashVelocityThreshold;
-
-        if ((onGround || onWall) && jumpNow) // Jump.
-        {
-            if (onWall)
-            {
-                UnStickToWall();
-            }
-            Jump();
-            doubleJumpAnimationComplete = false;
-            // Debug.Log("Jumped");
-        }
-        else if (!onGround && jumpNow && !doubleJumpNow) // Double jump.
-        {
-            DoubleJump();
-            doubleJumpNow = true;
-            // Debug.Log("Double Jumped");
-        }
-
-        if (dashNow && deltaDash >= dashCoolDown && !isDoubleJumping) // Dash.
-        {
-            if (onWall)
-            {
-                UnStickToWall();
-            }
-            Dash();
-            deltaDash = 0;
-            // Debug.Log("Dashed");
-        }
-
-        if (onWall && inputHorizontalRaw != wallDirection && inputHorizontalRaw != 0) // Unstick with movement.
-        {
-            UnStickToWall();
-            // Debug.Log("Unstuck: Moving");
-        }
 
         deltaDash += Time.deltaTime;
         deltaStick += Time.deltaTime;
@@ -203,8 +184,32 @@ public class PlayerController : MonoBehaviour
 
     public void Respawn()
     {
-        transform.position = new Vector3(respawnX, respawnY, transform.position.z);
+        // Just reload scene for now.
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        /*        transform.position = new Vector3(respawnX, respawnY, transform.position.z);*/
+        /*        ResetEnemies();*/
     }
+
+    /*    private void ResetEnemies()
+        {
+            GameObject[] startEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+            GameObject[] clones = GameObject.FindGameObjectsWithTag("Clone");
+            GameObject[] spawners = GameObject.FindGameObjectsWithTag("Enemy Spawner");
+            foreach (GameObject enemy in startEnemies)
+            {
+                enemy.GetComponent<EnemyController>().ReturnToSpawnInsant();
+            }
+            foreach (GameObject clone in clones)
+            {
+                Destroy(clone);
+            }
+            foreach (GameObject spawner in spawners)
+            {
+                spawner.GetComponent<Spawner>().active = false;
+
+                // Debug.Log("Disabled spawner.");
+            }
+        }*/
 
     // Called by an Animation Event at the end.
     public void CompleteDoubleJumpAnimation()
@@ -233,6 +238,66 @@ public class PlayerController : MonoBehaviour
             StickToWall();
             wallDirection = pointX > transform.position.x ? 1 : -1;
             // Debug.Log("Stuck to wall.");
+        }
+    }
+
+    public void OnMove(InputValue action)
+    {
+        Vector2 values = action.Get<Vector2>();
+        inputHorizontal = values.x;
+        inputHorizontalRaw = values.x == 0 ? 0 : (values.x > 0 ? 1 : -1);
+
+        if (onWall && inputHorizontalRaw != wallDirection && inputHorizontalRaw != 0) // Unstick with movement.
+        {
+            UnStickToWall();
+            // Debug.Log("Unstuck: Moving");
+        }
+
+        // Debug.Log("Movement detected.");
+    }
+    public void OnJump()
+    {
+        jumpNow = true;
+        if (Keyboard.current.wKey.wasPressedThisFrame || 
+            Keyboard.current.upArrowKey.wasPressedThisFrame)
+        {
+            if ((onGround || onWall) && jumpNow) // Jump.
+            {
+                if (onWall)
+                {
+                    UnStickToWall();
+                }
+                Jump();
+                doubleJumpAnimationComplete = false;
+                // Debug.Log("Jumped");
+            }
+            else if (!onGround && jumpNow && !doubleJumpNow) // Double jump.
+            {
+                DoubleJump();
+                doubleJumpNow = true;
+                // Debug.Log("Double Jumped");
+            }
+        }
+    }
+    public void OnSprint()
+    {
+        sprintNow = Keyboard.current.shiftKey.isPressed;
+    }
+    public void OnDash()
+    {
+        dashNow = true;
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            if (dashNow && deltaDash >= dashCoolDown/* && !isDoubleJumping*/) // Dash.
+            {
+                if (onWall)
+                {
+                    UnStickToWall();
+                }
+                Dash();
+                deltaDash = 0;
+                // Debug.Log("Dashed");
+            }
         }
     }
 

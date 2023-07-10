@@ -7,14 +7,15 @@ public class EnemyController : MonoBehaviour
     [SerializeField]
     private float AOE, speed;
     [SerializeField]
-    GameObject target, aggressionCircle;
+    public GameObject target, aggressionCircle;
     [SerializeField]
-    Color aggressive, unaggressive;
+    private Color aggressive, unaggressive;
 
-    SpriteRenderer spriteRenderer, aggressionCircleSpriteRenderer;
+    private SpriteRenderer spriteRenderer, aggressionCircleSpriteRenderer;
 
     private Vector2 spawn, lastPos;
-    private bool returnToSpawn = false, targetInRange;
+    private bool returnToSpawn = false;
+    public bool targetInRange = false;
 
     void Start()
     {
@@ -37,7 +38,6 @@ public class EnemyController : MonoBehaviour
         if (distanceToTarget <= AOE)
         {
             target.GetComponent<PlayerController>().Respawn();
-            transform.position = new Vector2(spawn.x, spawn.y);
         }
         if (returnToSpawn)
         {
@@ -73,6 +73,11 @@ public class EnemyController : MonoBehaviour
         {
             spriteRenderer.flipX = false;
         }
+    }
+
+    public void ReturnToSpawnInsant()
+    {
+        transform.position = new Vector2(spawn.x, spawn.y);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

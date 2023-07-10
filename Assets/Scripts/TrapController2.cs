@@ -5,7 +5,7 @@ using UnityEngine;
 public class TrapController2 : MonoBehaviour
 {
     [SerializeField]
-    List<GameObject> points;
+    private List<GameObject> points;
     [SerializeField]
     private int index;
     [SerializeField]
