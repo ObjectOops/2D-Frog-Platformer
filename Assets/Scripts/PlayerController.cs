@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 /*
  * 
@@ -12,7 +13,7 @@ using UnityEngine.SceneManagement;
  * 
  * Known Bugs:
  * 1. Because the player collider is a capsule, 
- *    if the player dashes into a tilemap corner, it gives them extra velocity.
+ *    if the player dashes into a tilemap corner, it gives them extra vertical velocity.
  * 2. When dashing into a sticky wall, 
  *    if the movement direction changes to be the opposite direction of the wall during the dash, 
  *    the animated sprite renders the wrong way.
@@ -39,6 +40,8 @@ public class PlayerController : MonoBehaviour
     private int health;
     [SerializeField]
     private float invulnerableTime;
+    [SerializeField]
+    private GameObject preTransitionMessage;
 
     // Player Components
     private Rigidbody2D rigidBody;
@@ -75,6 +78,7 @@ public class PlayerController : MonoBehaviour
     private float wallDirection = 0;
     private bool wasHit = false;
     private float respawnX, respawnY;
+    private bool transition = false, isWin;
     void Start()
     {
         rigidBody = GetComponent<Rigidbody2D>();
@@ -88,6 +92,18 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (transition)
+        {
+            if (isWin)
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            }
+            else
+            {
+                SceneManager.LoadScene("LoseScene");
+            }
+        }
+
         // inputHorizontal = Input.GetAxis("Horizontal");
         // inputHorizontalRaw = Input.GetAxisRaw("Horizontal");
         // jumpNow = Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W);
@@ -229,7 +245,24 @@ public class PlayerController : MonoBehaviour
 
         if (health <= 0)
         {
-            SceneManager.LoadScene("LoseScene");
+            isWin = false;
+            SetTransitionMessage("Lose");
+            StartCoroutine(WaitBeforeTransitioning(2));
+        }
+    }
+
+    private void SetTransitionMessage(string result)
+    {
+        StartCoroutine(WaitBeforeTransitioning(2));
+        preTransitionMessage.SetActive(true);
+        switch (result)
+        {
+            case "Win":
+                preTransitionMessage.GetComponent<TextMeshProUGUI>().text = "Yippee!";
+                break;
+            case "Lose":
+                preTransitionMessage.GetComponent<TextMeshProUGUI>().text = "Noo...";
+                break;
         }
     }
 
@@ -240,6 +273,12 @@ public class PlayerController : MonoBehaviour
         disableControl = false;
         yield return new WaitForSeconds(seconds / 2);
         wasHit = false;
+    }
+
+    private IEnumerator WaitBeforeTransitioning(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        transition = true;
     }
 
     private void ResetEnemies()
@@ -281,7 +320,10 @@ public class PlayerController : MonoBehaviour
         float pointX = point[0], pointY = point[1];
         if (other.gameObject.CompareTag("Goal") && pointY < transform.position.y)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            // SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            isWin = true;
+            SetTransitionMessage("Win");
+            StartCoroutine(WaitBeforeTransitioning(2));
             // Debug.Log("Win!: " + pointY + " " + transform.position.y);
         }
         else if (other.gameObject.CompareTag("Death"))
