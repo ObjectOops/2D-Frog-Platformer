@@ -37,7 +37,7 @@ public class EnemyController : MonoBehaviour
         }
         if (distanceToTarget <= AOE)
         {
-            target.GetComponent<PlayerController>().TakeDamage(1);
+            target.GetComponent<PlayerController>().TakeDamage(1, transform.position);
         }
         if (returnToSpawn)
         {

@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 /*
  * 
- * I understand that this code is not properly modularized.
+ * This code is not properly modularized.
  * Refactoring is a later objective at the moment. Variable and tag names may no longer reflect behavior.
  * Also some unecessary code was kept during migration from the old to new input system.
  * 
@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
  * 2. When dashing into a sticky wall, 
  *    if the movement direction changes to be the opposite direction of the wall during the dash, 
  *    the animated sprite renders the wrong way.
+ * 3. Enemies will not attak the player when sticking to a wall.
  * 
 */
 
@@ -28,6 +29,8 @@ public class PlayerController : MonoBehaviour
     private float dashForce, dashForceVertical, dashCoolDown, dashVelocityThreshold, dashSlowFactor;
     [SerializeField]
     private float stickCoolDown;
+    [SerializeField]
+    private float onDamageKnockback;
 
     // UI and Health
     [SerializeField]
@@ -70,7 +73,7 @@ public class PlayerController : MonoBehaviour
     private float playerWidth;
     private float deltaStick = 0;
     private float wallDirection = 0;
-    private float deltaDamage;
+    private bool wasHit = false;
     private float respawnX, respawnY;
     void Start()
     {
@@ -79,7 +82,6 @@ public class PlayerController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         collider = GetComponent<CapsuleCollider2D>();
         playerWidth = collider.size.x;
-        deltaDamage = invulnerableTime;
         respawnX = transform.position.x;
         respawnY = transform.position.y;
     }
@@ -105,11 +107,9 @@ public class PlayerController : MonoBehaviour
         bool isDoubleJumping = doubleJumpNow && !doubleJumpAnimationComplete;
         bool isSprinting = isRunning && sprintNow;
         bool isDashing = Mathf.Abs(rigidBody.velocity.x) > dashVelocityThreshold;
-        bool isInvulnerable = deltaDamage < invulnerableTime;
 
         deltaDash += Time.deltaTime;
         deltaStick += Time.deltaTime;
-        deltaDamage += Time.deltaTime;
 
         // Reset double jump upon contact with ground or sticking to wall.
         doubleJumpNow = !(onGround || onWall) && doubleJumpNow;
@@ -122,7 +122,7 @@ public class PlayerController : MonoBehaviour
         animator.SetBool("dashing", isDashing);
 
         animator.SetBool("perching", onWall);
-        animator.SetBool("hurting", isInvulnerable);
+        animator.SetBool("hurting", wasHit);
 
         OrientSprite();
 
@@ -136,7 +136,7 @@ public class PlayerController : MonoBehaviour
             float realSpeed = sprintNow ? sprintSpeed : speed; // Sprint.
             rigidBody.velocity = new Vector2(inputHorizontal * realSpeed, rigidBody.velocity.y);
         }
-        else
+        else if (!wasHit)
         {
             float currentvx = rigidBody.velocity.x;
             float newvx = currentvx > 0 ? currentvx - dashSlowFactor : currentvx + dashSlowFactor;
@@ -171,6 +171,7 @@ public class PlayerController : MonoBehaviour
         {
             rigidBody.velocity = new Vector2(0, 0);
             rigidBody.simulated = false;
+            // rigidBody.bodyType = RigidbodyType2D.Static;
             onWall = true;
             spriteRenderer.flipX = wallDirection != 1;
         }
@@ -179,6 +180,7 @@ public class PlayerController : MonoBehaviour
     private void UnStickToWall()
     {
         rigidBody.simulated = true;
+        // rigidBody.bodyType = RigidbodyType2D.Dynamic;
         onWall = false;
         deltaStick = 0;
     }
@@ -203,19 +205,41 @@ public class PlayerController : MonoBehaviour
         /*        ResetEnemies();*//*
     }*/
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int damage, Vector2 damagerPos)
     {
-        if (deltaDamage < invulnerableTime)
+        if (wasHit)
         {
             return;
         }
-        deltaDamage = 0;
+        wasHit = disableControl = true;
         health -= damage;
         ui.GetComponent<UIManager>().SetHealth(health);
+
+        if (!damagerPos.Equals(Vector2.zero))
+        {
+            rigidBody.velocity = Vector2.zero;
+            // float angle = Mathf.Deg2Rad * Vector2.SignedAngle(damagerPos, transform.position);
+            float angle = Mathf.Atan2(transform.position.y - damagerPos.y, transform.position.x - damagerPos.x);
+            // Debug.Log(Mathf.Rad2Deg * angle);
+            rigidBody.AddForce(new Vector2(onDamageKnockback * Mathf.Cos(angle), onDamageKnockback * Mathf.Sin(angle)), 
+                               ForceMode2D.Impulse);
+        }
+
+        StartCoroutine(WasHitPauseTime(invulnerableTime));
+
         if (health <= 0)
         {
             SceneManager.LoadScene("LoseScene");
         }
+    }
+
+    private IEnumerator WasHitPauseTime(float seconds)
+    {
+        // Give the player a chance to escape while still invulnerable.
+        yield return new WaitForSeconds(seconds / 2);
+        disableControl = false;
+        yield return new WaitForSeconds(seconds / 2);
+        wasHit = false;
     }
 
     private void ResetEnemies()
@@ -228,7 +252,9 @@ public class PlayerController : MonoBehaviour
 
         foreach (GameObject enemy in startEnemies)
         {
-            enemy.GetComponent<EnemyController>().ReturnToSpawnInsant();
+            EnemyController ec = enemy.GetComponent<EnemyController>();
+            ec.ReturnToSpawnInsant();
+            ec.targetInRange = false;
         }
         foreach (GameObject spawner in spawners)
         {
@@ -261,13 +287,13 @@ public class PlayerController : MonoBehaviour
         else if (other.gameObject.CompareTag("Death"))
         {
             transform.position = new Vector2(respawnX, respawnY);
-            TakeDamage(1);
+            TakeDamage(1, Vector2.zero);
             ResetEnemies();
             // Debug.Log("Died.");
         }
         else if (other.gameObject.CompareTag("Trap"))
         {
-            TakeDamage(1);
+            TakeDamage(1, other.gameObject.transform.position);
         }
         else if (other.gameObject.CompareTag("Sticky") && 
                  Mathf.Abs(pointX - transform.position.x) > playerWidth / 4)
