@@ -48,6 +48,8 @@ public class PlayerController : MonoBehaviour
     private Animator animator;
     private SpriteRenderer spriteRenderer;
     private new CapsuleCollider2D collider;
+    [SerializeField]
+    private AudioSource hitSound, runSound, jumpSound, dashSound;
 
     // Inputs
     private float inputHorizontal, inputHorizontalRaw;
@@ -227,6 +229,9 @@ public class PlayerController : MonoBehaviour
         {
             return;
         }
+
+        hitSound.Play();
+
         wasHit = disableControl = true;
         health -= damage;
         ui.GetComponent<UIManager>().SetHealth(health);
@@ -352,6 +357,11 @@ public class PlayerController : MonoBehaviour
         inputHorizontal = values.x;
         inputHorizontalRaw = values.x == 0 ? 0 : (values.x > 0 ? 1 : -1);
 
+        if (!runSound.isPlaying && inputHorizontalRaw != 0)
+        {
+            runSound.Play();
+        }
+
         if (onWall && inputHorizontalRaw != wallDirection && inputHorizontalRaw != 0) // Unstick with movement.
         {
             UnStickToWall();
@@ -372,6 +382,12 @@ public class PlayerController : MonoBehaviour
                 {
                     UnStickToWall();
                 }
+
+                if (!jumpSound.isPlaying)
+                {
+                    jumpSound.Play();
+                }
+
                 Jump();
                 doubleJumpAnimationComplete = false;
                 // Debug.Log("Jumped");
@@ -399,6 +415,12 @@ public class PlayerController : MonoBehaviour
                 {
                     UnStickToWall();
                 }
+
+                if (!dashSound.isPlaying)
+                {
+                    dashSound.Play();
+                }
+
                 Dash();
                 deltaDash = 0;
                 // Debug.Log("Dashed");
