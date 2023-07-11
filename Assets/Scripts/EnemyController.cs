@@ -10,8 +10,11 @@ public class EnemyController : MonoBehaviour
     public GameObject target, aggressionCircle;
     [SerializeField]
     private Color aggressive, unaggressive;
+    [SerializeField]
+    private bool horizontalOnly = false;
 
     private SpriteRenderer spriteRenderer, aggressionCircleSpriteRenderer;
+    private Rigidbody2D rigidBody;
 
     private Vector2 spawn, lastPos;
     private bool returnToSpawn = false;
@@ -21,6 +24,7 @@ public class EnemyController : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         aggressionCircleSpriteRenderer = aggressionCircle.GetComponent<SpriteRenderer>();
+        rigidBody = GetComponent<Rigidbody2D>();
         aggressionCircleSpriteRenderer.color = unaggressive;
         spawn = new Vector2(transform.position.x, transform.position.y);
     }
@@ -54,13 +58,51 @@ public class EnemyController : MonoBehaviour
     private void MoveToSpawn()
     {
         lastPos = transform.position;
-        transform.position = Vector2.MoveTowards(transform.position, spawn, speed * Time.deltaTime);
+        if (!horizontalOnly)
+        {
+            transform.position = Vector2.MoveTowards(transform.position, spawn, speed * Time.deltaTime);
+        }
+        else
+        {
+            float horizontalDiff = spawn.x - transform.position.x;
+            if (horizontalDiff > 0)
+            {
+                rigidBody.velocity = new Vector2(speed, rigidBody.velocity.y);
+            }
+            else if (horizontalDiff < 0)
+            {
+                rigidBody.velocity = new Vector2(-speed, rigidBody.velocity.y);
+            }
+            else
+            {
+                rigidBody.velocity = new Vector2(0, rigidBody.velocity.y);
+            }
+        }
     }
 
     private void MoveToTarget()
     {
         lastPos = transform.position;
-        transform.position = Vector2.MoveTowards(transform.position, target.transform.position, speed * Time.deltaTime);
+        if (!horizontalOnly)
+        {
+            transform.position = Vector2.MoveTowards(transform.position, target.transform.position, speed * Time.deltaTime);
+        }
+        else
+        {
+            float horizontalDiff = target.transform.position.x - transform.position.x;
+            if (horizontalDiff > 0)
+            {
+                rigidBody.velocity = new Vector2(speed, rigidBody.velocity.y);
+            }
+            else if (horizontalDiff < 0)
+            {
+                rigidBody.velocity = new Vector2(-speed, rigidBody.velocity.y);
+            }
+            else
+            {
+                rigidBody.velocity = new Vector2(0, rigidBody.velocity.y);
+            }
+        }
     }
 
     private void OrientSprite()
@@ -80,7 +122,7 @@ public class EnemyController : MonoBehaviour
         transform.position = new Vector2(spawn.x, spawn.y);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.Equals(target))
         {
@@ -89,12 +131,40 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.Equals(target))
         {
             targetInRange = false;
             returnToSpawn = true;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (horizontalOnly && 
+           (collision.gameObject.CompareTag("Death") || 
+            collision.gameObject.CompareTag("Player")))
+        {
+            // Fall out of map, otherwise it rests on the death zone. The player could then land on it...
+            // It would be better to make the death zone a trigger, but that would require more refactoring.
+            GetComponent<CapsuleCollider2D>().enabled = false;
+        }
+        else if (horizontalOnly && collision.gameObject.CompareTag("Trap"))
+        {
+            // Temporary solution to prevent being pushed around by trap.
+            rigidBody.velocity = Vector2.zero;
+            rigidBody.simulated = false;
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (horizontalOnly && collision.gameObject.CompareTag("Trap"))
+        {
+            // Temporary solution to prevent being pushed around by trap.
+            rigidBody.velocity = Vector2.zero;
+            rigidBody.simulated = true;
         }
     }
 
