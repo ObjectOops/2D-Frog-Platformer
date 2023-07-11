@@ -145,6 +145,7 @@ public class PlayerController : MonoBehaviour
         OrientSprite();
 
         // Debug.Log("Latency: " + Time.deltaTime);
+        // Debug.Log("Velocity: " + rigidBody.velocity);
     }
 
     void FixedUpdate()
@@ -236,9 +237,11 @@ public class PlayerController : MonoBehaviour
         health -= damage;
         ui.GetComponent<UIManager>().SetHealth(health);
 
+        // Debug.Log("Player: " + transform.position + ", Damage: " + damagerPos);
+        rigidBody.velocity = Vector2.zero;
+
         if (!damagerPos.Equals(Vector2.zero))
         {
-            rigidBody.velocity = Vector2.zero;
             // float angle = Mathf.Deg2Rad * Vector2.SignedAngle(damagerPos, transform.position);
             float angle = Mathf.Atan2(transform.position.y - damagerPos.y, transform.position.x - damagerPos.x);
             // Debug.Log(Mathf.Rad2Deg * angle);
@@ -341,6 +344,10 @@ public class PlayerController : MonoBehaviour
         else if (other.gameObject.CompareTag("Trap"))
         {
             TakeDamage(1, other.gameObject.transform.position);
+        }
+        else if (other.gameObject.CompareTag("StaticTrap"))
+        {
+            TakeDamage(1, new Vector2(transform.position.x + Random.Range(-2, 2), transform.position.y - 1));
         }
         else if (other.gameObject.CompareTag("Sticky") && 
                  Mathf.Abs(pointX - transform.position.x) > playerWidth / 4)

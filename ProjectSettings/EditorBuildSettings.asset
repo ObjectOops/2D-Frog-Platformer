@@ -12,9 +12,12 @@ EditorBuildSettings:
     path: Assets/Scenes/Platform1.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
+    path: Assets/Scenes/Platform2.unity
+    guid: 86818f3bfdaccf34daa6e4fc8410bb86
+  - enabled: 1
     path: Assets/Scenes/FinalScene.unity
     guid: 5922138f6192ebe4182a0b24e5e184d9
   - enabled: 1
     path: Assets/Scenes/LoseScene.unity
-    guid: b2dbd2790d2708e41b34e422a0b05d9e
+    guid: 94c2c25420e32b8438d6ecd8362df4d6
   m_configObjects: {}
