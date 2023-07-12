@@ -17,7 +17,7 @@ using TMPro;
  * 2. When dashing into a sticky wall, 
  *    if the movement direction changes to be the opposite direction of the wall during the dash, 
  *    the animated sprite renders the wrong way.
- * 3. Enemies will not attak the player when sticking to a wall.
+ * 3. Enemies will not attack the player when sticking to a wall.
  * 
 */
 
