@@ -94,6 +94,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (Keyboard.current.escapeKey.isPressed)
+        {
+            Debug.Log("Quitting...");
+            Application.Quit();
+        }
+
         if (transition)
         {
             if (isWin)
