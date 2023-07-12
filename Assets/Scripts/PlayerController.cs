@@ -152,6 +152,11 @@ public class PlayerController : MonoBehaviour
     {
         if (!disableControl)
         {
+            if (inputHorizontalRaw != 0 && !runSound.isPlaying)
+            {
+                runSound.Play();
+            }
+
             float realSpeed = sprintNow ? sprintSpeed : speed; // Sprint.
             rigidBody.velocity = new Vector2(inputHorizontal * realSpeed, rigidBody.velocity.y);
         }
@@ -363,11 +368,6 @@ public class PlayerController : MonoBehaviour
         Vector2 values = action.Get<Vector2>();
         inputHorizontal = values.x;
         inputHorizontalRaw = values.x == 0 ? 0 : (values.x > 0 ? 1 : -1);
-
-        if (!runSound.isPlaying && inputHorizontalRaw != 0)
-        {
-            runSound.Play();
-        }
 
         if (onWall && inputHorizontalRaw != wallDirection && inputHorizontalRaw != 0) // Unstick with movement.
         {

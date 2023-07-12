@@ -53,6 +53,12 @@ public class EnemyController : MonoBehaviour
         {
             returnToSpawn = false;
         }
+
+        // Crude solution.
+        if (transform.position.y < -500)
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void MoveToSpawn()
@@ -153,6 +159,7 @@ public class EnemyController : MonoBehaviour
         else if (horizontalOnly && collision.gameObject.CompareTag("Trap"))
         {
             // Temporary solution to prevent being pushed around by trap.
+            // Couldn't get collision matrix to work.
             rigidBody.velocity = Vector2.zero;
             rigidBody.simulated = false;
         }
@@ -163,6 +170,7 @@ public class EnemyController : MonoBehaviour
         if (horizontalOnly && collision.gameObject.CompareTag("Trap"))
         {
             // Temporary solution to prevent being pushed around by trap.
+            // Couldn't get collision matrix to work.
             rigidBody.velocity = Vector2.zero;
             rigidBody.simulated = true;
         }
