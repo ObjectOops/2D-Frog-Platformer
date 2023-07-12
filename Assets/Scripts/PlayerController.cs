@@ -152,7 +152,7 @@ public class PlayerController : MonoBehaviour
     {
         if (!disableControl)
         {
-            if (inputHorizontalRaw != 0 && !runSound.isPlaying)
+            if (inputHorizontalRaw != 0 && !runSound.isPlaying && onGround)
             {
                 runSound.Play();
             }
@@ -335,6 +335,7 @@ public class PlayerController : MonoBehaviour
         {
             // SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
             isWin = true;
+            health = 100; // In case the player is attacked after reaching the goal.
             SetTransitionMessage("Win");
             StartCoroutine(WaitBeforeTransitioning(2));
             // Debug.Log("Win!: " + pointY + " " + transform.position.y);
