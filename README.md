@@ -7,4 +7,4 @@ https://github.com/ObjectOops/2D-Frog-Platformer/assets/92550885/59bcc869-623c-4
 
 ___
 
-This game was made after one week of Unity experience. None of the sprites, tiles, nor the hit sound are original assets.
+This game was made after one week of Unity experience with a deadline. None of the sprites, tiles, nor the hit sound are original assets.
